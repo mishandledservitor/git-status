@@ -1,0 +1,70 @@
+# ─── OS junk (the one pattern in every one of Simon's repos) ───
+.DS_Store
+*.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Icon?
+
+# ─── Editor / IDE ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Secrets & credentials — keep broad; add narrower project excludes ON TOP, never instead ───
+.env
+.env.*
+!.env.example
+.envrc
+.netrc
+*.pem
+*.key
+*.p12
+*.pfx
+.hf_token
+secrets/
+credentials/
+credentials.json
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
+
+# ─── Logs ───
+*.log
+logs/
+
+# ─── Personal scratch space (pre-ignored so adopting the habit later needs no .gitignore edit) ───
+.scratch/
+
+# ─── Claude Code local/session state — narrow, so agents/ & skills/ stay committed if you add them ───
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+
+# ─── Node (inert until this becomes a JS/TS repo) ───
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── Python (inert until this becomes a Python repo) ───
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
