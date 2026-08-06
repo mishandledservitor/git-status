@@ -1,42 +1,39 @@
-# <Project Name>
-
-<!-- Replace <Project Name> and write one line under "What this repo is" once the purpose is real.
-     Anything marked TBD stays TBD until there's something true to write — don't fill space. -->
+# git-status
 
 ## What this repo is
 
-TBD — no defined purpose yet. Treat as a blank scaffold: don't assume a stack, build system,
-or layout, and ask before creating directories that imply a direction (`src/`, `packages/`, `docs/`…).
+A local web app that shows the git status of every repository under configured root folders
+(default `~/git`) on one page. Node + TypeScript backend over `node:http` with **no runtime
+dependencies**; plain-JS ES-module frontend with no build step. See [`README.md`](README.md)
+for what it shows and its known limitations.
 
 ## Conventions
 
-TBD — hard rules land here as real friction reveals them (style, non-negotiables, things never to do).
-Don't pre-invent a rule list; an unenforced rule is worse than none.
+- **Test-first.** Write the failing test, make it pass, then simplify. `npm test` must be green
+  and `npm run typecheck` clean before anything is committed.
+- **No runtime dependencies.** Dev-only deps (vitest, tsx, typescript) are fine. If something
+  seems to need a runtime dep, that is a design discussion, not a quiet `npm install`.
+- **Pure logic goes in pure modules.** `src/parse.ts` and `public/format.js` take strings/objects
+  and return data — no I/O, no DOM. That is what keeps the test suite fast and honest.
+  `public/format.js` is plain JS precisely so the browser and vitest can share it unbuilt.
+- **Never lie about repo state.** A card that says "clean" or "in sync" when it isn't is the
+  worst bug this app can have. When git cannot determine something, say so — do not fall back
+  to a reassuring zero. See the `gone` flag on `Upstream` for the canonical example.
+- **Read-only except `git fetch`.** No pull, push, checkout, prune-by-deleting, or anything else
+  that touches a working tree, index, or local branch. Adding a write action needs a deliberate
+  decision, confirmation UI, and tests.
+- **Everything from the filesystem is untrusted display data.** Repo and branch names reach the
+  DOM via `textContent`, never `innerHTML`. The fetch endpoint only runs git in a directory the
+  current scan actually discovered.
+- Git subprocesses always run non-interactively (`GIT_TERMINAL_PROMPT=0`, `ssh -oBatchMode=yes`)
+  with a timeout. One credential prompt would hang a whole refresh.
 
 ## Current status
 
-Last updated: <date>
-<one or two lines: what exists so far, what's next>
+Last updated: 2026-08-06
+Working end to end against ~28 real repos; refresh takes well under a second. ~140 tests pass.
 
 - Full history: `CHANGELOG.md`.
 - If this section contradicts what you see in the repo, trust the repo and flag the mismatch.
 - `.claude/settings.local.json` is gitignored by default — commit it only to deliberately share config across machines.
-- Add a `VERSION` file only once there's a package manifest, submodule set, or release process to pin it to.
-- No `LICENSE` yet — this repo is **private by default**. Add one only once the purpose (and whether it goes public) is established.
-
-<!-- ─── Add the sections below only when each is REAL. Use these exact names (they recur across the
-         other repos). An empty version of any of these is ceremony that rots — leave it out until true. ───
-
-## Structure         annotated tree — `path` — role — one line, once there's a layout worth mapping
-## Commands          build / run / test, once such a system exists
-## Data model / API   schema or route list, once there is one
-## Branch strategy    once there's a release process or more than one contributor
-## CI/CD              list each workflow by name + trigger, once workflows exist
-## Deep reference     Need | File routing table, once there are enough docs to route to
-## Important notes    recurring gotchas — a lessons-learned LOG (add an entry once a mistake has
-                      actually recurred, not a place to pre-guess failure modes)
-
-     .claude/agents/ and .claude/skills/ are opt-in — add one only for real delegation or a reusable
-     procedure worth packaging; never ship a placeholder. See .claude/README.md.
-     Short-term / session notes aren't scaffolded — make a dated scratch file or notes/ ad hoc;
-     .scratch/ is already gitignored, so adopting the habit costs nothing. -->
+- No `LICENSE` yet — this repo is **private by default**.

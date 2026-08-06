@@ -1,0 +1,23 @@
+{
+  "name": "git-status-gui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "At-a-glance git status dashboard for every repo under a root folder",
+  "scripts": {
+    "start": "tsx src/main.ts",
+    "dev": "tsx watch src/main.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>git status</title>
+    <link rel="stylesheet" href="/style.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🌿</text></svg>"
+    />
+  </head>
+  <body>
+    <header class="bar">
+      <h1>git status</h1>
+      <input id="search" type="search" placeholder="Filter repos, branches, paths…" autocomplete="off" />
+      <button id="refresh" class="primary" title="Re-read local git state (instant)">Refresh</button>
+      <button id="fetch-all" title="git fetch --all --prune on every visible repo">Fetch all</button>
+      <button id="settings-toggle" aria-expanded="false">Settings</button>
+    </header>
+
+    <section id="settings" class="settings" hidden>
+      <div class="settings-block">
+        <h2>Folders to scan</h2>
+        <p class="hint">One path per line. <code>~</code> is expanded.</p>
+        <textarea id="roots" rows="3" spellcheck="false"></textarea>
+        <button id="save-roots" class="primary">Save &amp; rescan</button>
+      </div>
+      <div class="settings-block">
+        <h2>Repos to show</h2>
+        <p class="hint">Unticked repos are skipped entirely. New clones appear automatically.</p>
+        <div class="settings-actions">
+          <button id="select-all">All</button>
+          <button id="select-none">None</button>
+        </div>
+        <div id="repo-picker" class="picker"></div>
+      </div>
+    </section>
+
+    <p id="status-line" class="status-line" role="status" aria-live="polite"></p>
+
+    <div id="app" class="grid"></div>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

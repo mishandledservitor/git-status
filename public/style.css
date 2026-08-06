@@ -1,0 +1,363 @@
+:root {
+  color-scheme: light dark;
+  --bg: #fbfbfa;
+  --panel: #ffffff;
+  --line: #e3e2df;
+  --text: #1c1b19;
+  --muted: #6b6a67;
+  --ok: #2f7d4f;
+  --ahead: #1f6feb;
+  --behind: #b45309;
+  --diverged: #b3261e;
+  --alert: #b3261e;
+  --accent: #1c1b19;
+  --shadow: 0 1px 2px rgb(0 0 0 / 6%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141413;
+    --panel: #1d1d1b;
+    --line: #33322f;
+    --text: #eeece7;
+    --muted: #9a9892;
+    --ok: #6cc08b;
+    --ahead: #6aa8ff;
+    --behind: #e0a458;
+    --diverged: #f28b82;
+    --alert: #f28b82;
+    --accent: #eeece7;
+    --shadow: none;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* `display` on .settings/.grid would otherwise win over the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  padding: 0 1.25rem 3rem;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, -apple-system, "Segoe UI", system-ui, sans-serif;
+}
+
+h1 {
+  font-size: 1rem;
+  font-weight: 650;
+  margin: 0 0.5rem 0 0;
+  letter-spacing: -0.01em;
+}
+
+h2 {
+  font-size: 0.8125rem;
+  font-weight: 650;
+  margin: 0 0 0.25rem;
+}
+
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+
+.bar input[type="search"] {
+  flex: 1;
+  min-width: 8rem;
+  max-width: 26rem;
+}
+
+input,
+textarea,
+button {
+  font: inherit;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.4rem 0.7rem;
+}
+
+textarea {
+  width: 100%;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  resize: vertical;
+}
+
+button {
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+button:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+.settings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+  padding: 1rem;
+  margin-top: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
+.settings-block > button {
+  margin-top: 0.5rem;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.hint {
+  margin: 0 0 0.4rem;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.picker {
+  max-height: 14rem;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 0.4rem 0.6rem;
+}
+
+.picker label {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.15rem 0;
+  cursor: pointer;
+}
+
+.picker .path {
+  color: var(--muted);
+  font-size: 0.75rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-line {
+  min-height: 1.25rem;
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 21rem), 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.85rem 0.95rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+}
+
+.card.attention {
+  border-left: 3px solid var(--behind);
+}
+
+.card.error {
+  border-left: 3px solid var(--alert);
+}
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.repo-name {
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repo-path {
+  flex: 0 1 auto;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.branch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.6rem;
+  font-size: 0.8125rem;
+}
+
+.rows dt {
+  color: var(--muted);
+}
+
+.rows dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tone-ok {
+  color: var(--ok);
+}
+
+.tone-ahead {
+  color: var(--ahead);
+}
+
+.tone-behind {
+  color: var(--behind);
+}
+
+.tone-diverged,
+.tone-alert {
+  color: var(--diverged);
+  font-weight: 600;
+}
+
+.tone-none {
+  color: var(--muted);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.badge {
+  padding: 0.05rem 0.45rem;
+  border: 1px solid currentcolor;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.card-foot {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.card-foot > details {
+  flex: 1;
+  min-width: 0;
+}
+
+button.copy {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+button.copy:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.copy-fallback {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  width: min(40rem, calc(100vw - 2rem));
+  height: 12rem;
+  z-index: 20;
+}
+
+details summary {
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 0.8125rem;
+}
+
+details ul {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  max-height: 13rem;
+  overflow-y: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.75rem;
+}
+
+details li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.1rem 0;
+}
+
+details li .meta {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+details li.current {
+  font-weight: 700;
+}
+
+.empty {
+  grid-column: 1 / -1;
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--muted);
+}
