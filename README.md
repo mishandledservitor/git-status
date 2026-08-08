@@ -3,6 +3,22 @@
 A local dashboard showing the git status of every repository under one or more folders,
 so you can see at a glance which ones have work you have forgotten about.
 
+## Running it
+
+**Double-click `Git Status.app`** (macOS). It starts the server if it is not already running and
+opens the dashboard in Google Chrome — no terminal, no typing. First run installs the dev
+dependencies, which takes a moment; after that it is instant. Drag it to the Dock to keep it
+handy, but leave the bundle itself inside the repo folder — it locates the repo relative to
+itself. Anything it has to say goes to `~/Library/Logs/git-status-gui.log`.
+
+The server then stays running in the background until you log out or stop it:
+
+```bash
+pkill -f "tsx src/main.ts"
+```
+
+Or start it the ordinary way:
+
 ```bash
 npm install && npm start
 ```
@@ -67,7 +83,14 @@ Unticking a repo adds it to `hidden`. Anything newly cloned shows up automatical
 npm test          # vitest, ~140 tests
 npm run typecheck # tsc --noEmit
 npm run dev       # server with reload
+npm run icon      # redraw Git Status.app's icon
 ```
+
+`scripts/make-icon.mjs` is the icon: it defines the artwork as vector shapes, rasterises them
+at every size the iconset needs, and packs `AppIcon.icns`. It draws them itself rather than
+letting QuickLook rasterise an SVG, because QuickLook flattens transparency onto white — which
+puts a white box behind the icon everywhere macOS draws it. `assets/icon.svg` is a preview
+generated from the same constants; edit the script, not the SVG.
 
 Built test-first. The layout separates pure logic from I/O so most of it is testable without a
 subprocess: `src/parse.ts` (git output parsers) and `public/format.js` (display helpers, shared

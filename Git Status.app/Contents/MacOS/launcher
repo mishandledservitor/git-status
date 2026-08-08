@@ -1,0 +1,4 @@
+#!/bin/bash
+# The whole bundle is a double-clickable wrapper around scripts/launch.sh.
+# It must stay inside the repo: the repo is located relative to this file.
+exec "$(cd "$(dirname "$0")/../../.." && pwd)/scripts/launch.sh"

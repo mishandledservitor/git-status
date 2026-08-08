@@ -126,6 +126,12 @@ export function createApp(options: AppOptions = {}): Server {
       PUT: async (req) => saveConfig(configPath, normalizeConfig(await readJson(req))),
     },
 
+    // The launcher polls this to know the port is up *and* that it is us
+    // answering, rather than some other process that got there first.
+    '/api/health': {
+      GET: async () => ({ app: 'git-status-gui', ok: true }),
+    },
+
     '/api/repos': {
       GET: async () => {
         const { config, discovered, hiddenSet } = await scan();

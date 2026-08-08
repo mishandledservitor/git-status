@@ -30,8 +30,11 @@ for what it shows and its known limitations.
 
 ## Current status
 
-Last updated: 2026-08-06
-Working end to end against ~28 real repos; refresh takes well under a second. ~140 tests pass.
+Last updated: 2026-08-08
+Working end to end against ~28 real repos; refresh takes well under a second. 143 tests pass.
+Launched by double-clicking `Git Status.app`, which wraps `scripts/launch.sh` — that script runs
+with a bare launchd PATH and no terminal, so it resolves Node explicitly and reports failures
+through an AppleScript dialog plus `~/Library/Logs/git-status-gui.log`.
 
 - Full history: `CHANGELOG.md`.
 - If this section contradicts what you see in the repo, trust the repo and flag the mismatch.

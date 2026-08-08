@@ -244,6 +244,14 @@ describe('POST /api/fetch', () => {
   });
 });
 
+describe('GET /api/health', () => {
+  it('identifies this app, so a launcher can tell it apart from anything else on the port', async () => {
+    const { status, body } = await api('/api/health');
+    expect(status).toBe(200);
+    expect(body).toEqual({ app: 'git-status-gui', ok: true });
+  });
+});
+
 describe('method handling', () => {
   it('405s a wrong method on an API route', async () => {
     expect((await api('/api/repos', { method: 'DELETE' })).status).toBe(405);
