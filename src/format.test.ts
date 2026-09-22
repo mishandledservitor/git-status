@@ -9,6 +9,10 @@ import {
   shortPath,
   claudePrompt,
   divergenceRows,
+  repoFolder,
+  parseQuery,
+  toggleToken,
+  groupRepos,
 } from '../public/format.js';
 
 describe('shortPath', () => {
@@ -389,5 +393,123 @@ describe('filterRepos', () => {
 
   it('tolerates a detached repo with a null branch', () => {
     expect(filterRepos([repo({ name: 'd', branch: null })], 'd')).toHaveLength(1);
+  });
+});
+
+
+describe('repoFolder', () => {
+  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+
+  it('is the first path segment below the matching root', () => {
+    expect(repoFolder('/Users/simon/git/mishandled/thing', roots)).toBe('mishandled');
+    expect(repoFolder('/Users/simon/git/x-others/spec-kit', roots)).toBe('x-others');
+  });
+
+  it('is the root itself for a repo sitting directly under it', () => {
+    expect(repoFolder('/Users/simon/git/thing', roots)).toBe('~/git');
+  });
+
+  it('keeps only the first segment for a deeper nesting', () => {
+    expect(repoFolder('/Users/simon/git/a/b/c', roots)).toBe('a');
+  });
+
+  it('falls back to the parent directory when no root matches', () => {
+    expect(repoFolder('/elsewhere/team/thing', roots)).toBe('/elsewhere/team');
+  });
+});
+
+describe('parseQuery', () => {
+  it('treats plain words as free-text terms', () => {
+    expect(parseQuery('alpha main')).toEqual({ terms: ['alpha', 'main'], not: [], folder: [], branch: [], is: [] });
+  });
+
+  it('understands folder:, branch:, is: and a leading minus', () => {
+    expect(parseQuery('folder:mishandled is:dirty branch:prod -archive')).toEqual({
+      terms: [],
+      not: ['archive'],
+      folder: ['mishandled'],
+      branch: ['prod'],
+      is: ['dirty'],
+    });
+  });
+
+  it('lowercases everything and ignores empty tokens', () => {
+    expect(parseQuery('  Folder:Mishandled   ALPHA ')).toEqual({ terms: ['alpha'], not: [], folder: ['mishandled'], branch: [], is: [] });
+  });
+});
+
+describe('filterRepos with the query syntax', () => {
+  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const repos = [
+    repo({ name: 'alpha', path: '/Users/simon/git/mishandled/alpha', branch: 'main' }),
+    repo({ name: 'beta', path: '/Users/simon/git/mishandled/beta', branch: 'prod', dirty: { staged: 0, modified: 2, untracked: 0, conflicted: 0 } }),
+    repo({ name: 'gamma', path: '/Users/simon/git/work/gamma', branch: 'main', upstream: { name: 'origin/main', ahead: 2, behind: 0, gone: false } }),
+    repo({ name: 'delta', path: '/Users/simon/git/work/delta', branch: 'main', upstream: { name: 'origin/main', ahead: 0, behind: 3, gone: false } }),
+  ];
+  const names = (q: string) => filterRepos(repos, q, roots).map((r: any) => r.name);
+
+  it('folder: matches the subfolder under the root', () => {
+    expect(names('folder:mishandled')).toEqual(['alpha', 'beta']);
+    expect(names('folder:work')).toEqual(['gamma', 'delta']);
+  });
+
+  it('branch: matches the checked-out branch only', () => {
+    expect(names('branch:prod')).toEqual(['beta']);
+  });
+
+  it('is: filters on state', () => {
+    expect(names('is:dirty')).toEqual(['beta']);
+    expect(names('is:ahead')).toEqual(['gamma']);
+    expect(names('is:behind')).toEqual(['delta']);
+    expect(names('is:clean')).toEqual(['alpha']);
+    expect(names('is:attention')).toEqual(['beta', 'gamma', 'delta']);
+  });
+
+  it('a minus excludes', () => {
+    expect(names('-work')).toEqual(['alpha', 'beta']);
+    expect(names('folder:work -delta')).toEqual(['gamma']);
+  });
+
+  it('every token must match (AND), plain terms still match name, branch and path', () => {
+    expect(names('folder:mishandled main')).toEqual(['alpha']);
+    expect(names('alpha beta')).toEqual([]);
+  });
+
+  it('still works without roots for callers that do not pass them', () => {
+    expect(filterRepos(repos, 'alpha').map((r: any) => r.name)).toEqual(['alpha']);
+  });
+});
+
+describe('toggleToken', () => {
+  it('appends the token when absent and removes it when present', () => {
+    expect(toggleToken('', 'folder:mishandled')).toBe('folder:mishandled');
+    expect(toggleToken('alpha', 'folder:mishandled')).toBe('alpha folder:mishandled');
+    expect(toggleToken('alpha folder:mishandled', 'folder:mishandled')).toBe('alpha');
+  });
+
+  it('matches case-insensitively and normalises whitespace', () => {
+    expect(toggleToken('  Folder:Mishandled   alpha ', 'folder:mishandled')).toBe('alpha');
+  });
+});
+
+describe('groupRepos', () => {
+  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const repos = [
+    repo({ name: 'zeta', path: '/Users/simon/git/work/zeta' }),
+    repo({ name: 'alpha', path: '/Users/simon/git/mishandled/alpha' }),
+    repo({ name: 'beta', path: '/Users/simon/git/mishandled/beta', dirty: { staged: 0, modified: 1, untracked: 0, conflicted: 0 } }),
+    repo({ name: 'solo', path: '/Users/simon/git/solo' }),
+  ];
+
+  it('groups by folder, folders sorted by name with the root itself last, repos sorted by attention then name', () => {
+    const groups = groupRepos(repos, roots);
+    expect(groups.map((g: any) => g.folder)).toEqual(['mishandled', 'work', '~/git']);
+    expect(groups[0]!.repos.map((r: any) => r.name)).toEqual(['beta', 'alpha']);
+  });
+
+  it('counts how many in each group need attention', () => {
+    const groups = groupRepos(repos, roots);
+    expect(groups[0]!.attention).toBe(1);
+    expect(groups[1]!.attention).toBe(0);
   });
 });

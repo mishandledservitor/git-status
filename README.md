@@ -41,7 +41,7 @@ Repos needing attention sort to the top. **Ask Claude** copies the card, plus an
 | --- | --- |
 | **Refresh** | Re-reads on-disk git state. No network, sub-second across dozens of repos. Ahead/behind figures are only as fresh as your last fetch — each card shows how long ago that was. |
 | **Fetch all** | Runs `git fetch --all --prune` on every visible repo, then refreshes. |
-| **Settings** | Edit the folders to scan, and tick/untick which repos to show. |
+| **Settings** | Edit the folders to scan, and tick/untick which repos to show. Repos are listed by subfolder; ticking a folder ticks everything in it, and the search box narrows the list. |
 
 `git fetch` is the only command this app runs that writes anything, and it only ever updates remote-tracking refs — never your working tree, index, or local branches. Everything else is a read.
 
@@ -54,6 +54,20 @@ Stored at `~/.config/git-status-gui/config.json` (override with `GIT_STATUS_GUI_
 ```
 
 Unticking a repo adds it to `hidden`. Anything newly cloned shows up automatically.
+
+## Filtering
+
+Cards are grouped by the subfolder under the scanned root (`mishandled`, `x-others`, …); the toggle next to the chips switches to one flat grid. The chip row shows every folder with its repo count and how many need attention, plus one chip per state that currently applies. Clicking a chip adds or removes its token in the filter box, so the box is always the whole truth. Tokens are separated by spaces and all of them must match:
+
+| Token | Matches |
+|---|---|
+| `word` | repo name, checked-out branch or path |
+| `-word` | excludes a match |
+| `folder:x` | the subfolder under the root, e.g. `folder:mishandled` |
+| `branch:x` | the checked-out branch, e.g. `branch:prod` |
+| `is:state` | `attention`, `dirty`, `clean`, `ahead`, `behind`, `diverged`, `detached`, `stash`, `noremote`, `error` |
+
+`folder:mishandled is:dirty -archive` is every dirty repo under `mishandled` whose name, branch or path does not contain "archive". An unknown `is:` state matches nothing rather than everything.
 
 `PORT` and `HOST` are also honoured; the default binds to `127.0.0.1` only.
 

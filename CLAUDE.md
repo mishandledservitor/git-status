@@ -16,8 +16,8 @@ A local web app that shows the git status of every repository under configured r
 
 ## Current status
 
-Last updated: 2026-08-08
-Working end to end against ~28 real repos; refresh takes well under a second. 143 tests pass.
+Last updated: 2026-09-22
+Working end to end against ~48 real repos; refresh takes well under a second. 160 tests pass. Cards group by subfolder, and the filter box has a small token syntax (`folder:`, `branch:`, `is:`, `-word`) driven by clickable chips; see README.
 Launched by double-clicking `Git Status.app`, which wraps `scripts/launch.sh` — that script runs
 with a bare launchd PATH and no terminal, so it resolves Node explicitly and reports failures
 through an AppleScript dialog plus `~/Library/Logs/git-status-gui.log`.

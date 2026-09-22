@@ -13,11 +13,33 @@
   <body>
     <header class="bar">
       <h1>git status</h1>
-      <input id="search" type="search" placeholder="Filter repos, branches, paths…" autocomplete="off" />
+      <div class="search-wrap">
+        <input
+          id="search"
+          type="search"
+          placeholder="Filter: name, branch, path, folder:x, branch:x, is:dirty, -word"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="search-help-toggle" class="ghost" title="Filter syntax" aria-expanded="false" aria-controls="search-help">?</button>
+      </div>
       <button id="refresh" class="primary" title="Re-read local git state (instant)">Refresh</button>
       <button id="fetch-all" title="git fetch --all --prune on every visible repo">Fetch all</button>
       <button id="settings-toggle" aria-expanded="false">Settings</button>
     </header>
+
+    <div id="search-help" class="search-help" hidden>
+      <p>Tokens are separated by spaces and all of them must match.</p>
+      <dl>
+        <dt>word</dt><dd>matches the repo name, checked-out branch or path</dd>
+        <dt>-word</dt><dd>excludes a match</dd>
+        <dt>folder:x</dt><dd>the subfolder under the scanned root, e.g. <code>folder:mishandled</code></dd>
+        <dt>branch:x</dt><dd>the checked-out branch, e.g. <code>branch:prod</code></dd>
+        <dt>is:state</dt><dd><code>attention</code>, <code>dirty</code>, <code>clean</code>, <code>ahead</code>, <code>behind</code>, <code>diverged</code>, <code>detached</code>, <code>stash</code>, <code>noremote</code>, <code>error</code></dd>
+      </dl>
+    </div>
+
+    <nav id="chips" class="chips" aria-label="Quick filters"></nav>
 
     <section id="settings" class="settings" hidden>
       <div class="settings-block">
@@ -26,12 +48,14 @@
         <textarea id="roots" rows="3" spellcheck="false"></textarea>
         <button id="save-roots" class="primary">Save &amp; rescan</button>
       </div>
-      <div class="settings-block">
+      <div class="settings-block settings-block-wide">
         <h2>Repos to show</h2>
-        <p class="hint">Unticked repos are skipped entirely. New clones appear automatically.</p>
+        <p class="hint">Unticked repos are skipped entirely. New clones appear automatically. Tick a folder to select everything in it.</p>
         <div class="settings-actions">
+          <input id="picker-filter" type="search" placeholder="Find a repo or folder…" autocomplete="off" spellcheck="false" />
           <button id="select-all">All</button>
           <button id="select-none">None</button>
+          <span id="picker-count" class="hint"></span>
         </div>
         <div id="repo-picker" class="picker"></div>
       </div>
@@ -39,7 +63,7 @@
 
     <p id="status-line" class="status-line" role="status" aria-live="polite"></p>
 
-    <div id="app" class="grid"></div>
+    <div id="app" class="groups"></div>
 
     <script type="module" src="/app.js"></script>
   </body>

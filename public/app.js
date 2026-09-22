@@ -5,9 +5,12 @@ import {
   divergence,
   divergenceRows,
   filterRepos,
+  groupRepos,
   relativeTime,
+  repoFolder,
   shortPath,
   sortRepos,
+  toggleToken,
 } from './format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -19,7 +22,27 @@ const state = {
   scannedAt: null,
   query: '',
   busy: false,
+  grouped: readPref('grouped', true),
+  pickerQuery: '',
 };
+
+/* Per-viewer conveniences only; the app must work without storage at all. */
+function readPref(key, fallback) {
+  try {
+    const raw = localStorage.getItem(`git-status:${key}`);
+    return raw === null ? fallback : JSON.parse(raw);
+  } catch {
+    return fallback;
+  }
+}
+
+function writePref(key, value) {
+  try {
+    localStorage.setItem(`git-status:${key}`, JSON.stringify(value));
+  } catch {
+    // Storage refused (private window, quota): the toggle still works for this page load.
+  }
+}
 
 /* ---------------------------------------------------------------- rendering */
 
@@ -173,45 +196,183 @@ function card(repo) {
   ]);
 }
 
-function render() {
-  const visible = sortRepos(filterRepos(state.repos, state.query));
-  const app = $('app');
-  app.replaceChildren(
-    ...(visible.length
-      ? visible.map(card)
-      : [
-          el('p', {
-            class: 'empty',
-            text: state.repos.length
-              ? 'No repos match that filter.'
-              : 'No repos found. Check the folders to scan under Settings.',
-          }),
-        ]),
+const activeTokens = () => new Set(state.query.toLowerCase().split(/\s+/).filter(Boolean));
+
+function chip(label, token, { count, attention, tone } = {}) {
+  const on = activeTokens().has(token.toLowerCase());
+  const button = el('button', {
+    class: `chip${on ? ' on' : ''}${tone ? ` chip-${tone}` : ''}`,
+    'aria-pressed': String(on),
+    title: on ? `Remove ${token} from the filter` : `Add ${token} to the filter`,
+  }, [
+    el('span', { text: label }),
+    count !== undefined ? el('span', { class: 'chip-count', text: String(count) }) : null,
+    attention ? el('span', { class: 'chip-attention', text: String(attention), title: `${attention} need attention` }) : null,
+  ]);
+  button.addEventListener('click', () => setQuery(toggleToken(state.query, token)));
+  return button;
+}
+
+function setQuery(query) {
+  state.query = query;
+  $('search').value = query;
+  render();
+}
+
+function renderChips() {
+  const groups = groupRepos(state.repos, state.roots);
+  const stateCounts = (name) => filterRepos(state.repos, `is:${name}`, state.roots).length;
+  const folderChips = groups.length > 1
+    ? groups.map((g) => chip(g.folder, `folder:${g.folder}`, { count: g.repos.length, attention: g.attention }))
+    : [];
+  const stateChips = [
+    ['needs attention', 'attention', 'behind'],
+    ['dirty', 'dirty', 'behind'],
+    ['ahead', 'ahead', 'ahead'],
+    ['behind', 'behind', 'behind'],
+    ['diverged', 'diverged', 'diverged'],
+  ]
+    .map(([label, name, tone]) => [label, name, tone, stateCounts(name)])
+    .filter(([, , , n]) => n > 0)
+    .map(([label, name, tone, n]) => chip(label, `is:${name}`, { count: n, tone }));
+
+  const groupToggle = el('label', { class: 'toggle', title: 'Show one section per folder' }, [
+    el('input', { type: 'checkbox', id: 'group-toggle', checked: state.grouped }),
+    el('span', { text: 'Group by folder' }),
+  ]);
+  groupToggle.querySelector('input').addEventListener('change', (e) => {
+    state.grouped = e.target.checked;
+    writePref('grouped', state.grouped);
+    render();
+  });
+
+  const clear = state.query.trim()
+    ? el('button', { class: 'chip chip-clear', text: 'Clear filter', title: 'Empty the filter box' })
+    : null;
+  clear?.addEventListener('click', () => setQuery(''));
+
+  $('chips').replaceChildren(
+    ...[
+      ...folderChips,
+      folderChips.length && stateChips.length ? el('span', { class: 'chip-sep' }) : null,
+      ...stateChips,
+      el('span', { class: 'chip-spacer' }),
+      clear,
+      groupToggle,
+    ].filter(Boolean),
   );
+}
+
+function section(group) {
+  const summary = `${group.repos.length} repo${group.repos.length === 1 ? '' : 's'}${
+    group.attention ? ` · ${group.attention} need${group.attention === 1 ? 's' : ''} attention` : ' · all quiet'
+  }`;
+  const head = el('div', { class: 'section-head' }, [
+    el('h2', { class: 'section-title', text: group.folder }),
+    el('span', { class: `section-meta${group.attention ? ' tone-behind' : ' tone-ok'}`, text: summary }),
+    el('button', { class: 'ghost section-only', text: 'only', title: `Filter to folder:${group.folder}` }),
+  ]);
+  head.querySelector('.section-only').addEventListener('click', () => setQuery(toggleToken(state.query, `folder:${group.folder}`)));
+  return el('section', { class: 'section' }, [head, el('div', { class: 'grid' }, group.repos.map(card))]);
+}
+
+function render() {
+  const visible = filterRepos(state.repos, state.query, state.roots);
+  const app = $('app');
+  if (!visible.length) {
+    app.replaceChildren(
+      el('p', {
+        class: 'empty',
+        text: state.repos.length
+          ? 'No repos match that filter.'
+          : 'No repos found. Check the folders to scan under Settings.',
+      }),
+    );
+  } else if (state.grouped) {
+    app.replaceChildren(...groupRepos(visible, state.roots).map(section));
+  } else {
+    app.replaceChildren(el('div', { class: 'grid' }, sortRepos(visible).map(card)));
+  }
+  renderChips();
 
   const needing = state.repos.filter((r) => attentionScore(r) > 0).length;
+  const showing = visible.length === state.repos.length ? '' : `showing ${visible.length} of `;
   $('status-line').textContent = state.scannedAt
-    ? `${state.repos.length} repos · ${needing} need attention · ${state.hidden.length} hidden · scanned ${relativeTime(state.scannedAt)}`
+    ? `${showing}${state.repos.length} repos · ${needing} need attention · ${state.hidden.length} hidden · scanned ${relativeTime(state.scannedAt)}`
     : '';
 }
+
+/** The picker keeps its own checkbox state between renders so a filter never loses ticks. */
+const pickerTicks = new Map();
 
 function renderPicker() {
   const all = [
     ...state.repos.map((r) => ({ path: r.path, name: r.name, shown: true })),
     ...state.hidden.map((r) => ({ path: r.path, name: r.name, shown: false })),
-  ].sort((a, b) => a.name.localeCompare(b.name));
+  ];
+  for (const r of all) if (!pickerTicks.has(r.path)) pickerTicks.set(r.path, r.shown);
+  for (const path of [...pickerTicks.keys()]) if (!all.some((r) => r.path === path)) pickerTicks.delete(path);
 
-  $('repo-picker').replaceChildren(
-    ...all.map((r) =>
-      el('label', {}, [
-        el('input', { type: 'checkbox', 'data-path': r.path, checked: r.shown }),
-        el('span', { text: r.name }),
-        el('span', { class: 'path', text: shortPath(r.path, state.roots), title: r.path }),
-      ]),
-    ),
+  const needle = state.pickerQuery.trim().toLowerCase();
+  const byFolder = new Map();
+  for (const r of all) {
+    const folder = repoFolder(r.path, state.roots);
+    if (needle && !r.name.toLowerCase().includes(needle) && !folder.toLowerCase().includes(needle)) continue;
+    if (!byFolder.has(folder)) byFolder.set(folder, []);
+    byFolder.get(folder).push(r);
+  }
+
+  const rootNames = new Set(state.roots.map((r) => r.configured));
+  const folders = [...byFolder.entries()].sort(
+    ([a], [b]) => (rootNames.has(a) - rootNames.has(b)) || a.localeCompare(b, undefined, { sensitivity: 'base' }),
   );
 
+  const blocks = folders.map(([folder, repos]) => {
+    repos.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+    const ticked = repos.filter((r) => pickerTicks.get(r.path)).length;
+    const master = el('input', { type: 'checkbox', 'data-folder': folder, checked: ticked === repos.length && repos.length > 0 });
+    master.indeterminate = ticked > 0 && ticked < repos.length;
+    master.addEventListener('change', () => {
+      for (const r of repos) pickerTicks.set(r.path, master.checked);
+      commitPicker();
+    });
+    return el('div', { class: 'picker-group' }, [
+      el('label', { class: 'picker-folder' }, [
+        master,
+        el('span', { class: 'picker-folder-name', text: folder }),
+        el('span', { class: 'path', text: `${ticked} of ${repos.length} shown` }),
+      ]),
+      ...repos.map((r) => {
+        const box = el('input', { type: 'checkbox', 'data-path': r.path, checked: pickerTicks.get(r.path) });
+        box.addEventListener('change', () => {
+          pickerTicks.set(r.path, box.checked);
+          commitPicker();
+        });
+        return el('label', { class: 'picker-repo' }, [
+          box,
+          el('span', { text: r.name }),
+          el('span', { class: 'path', text: shortPath(r.path, state.roots), title: r.path }),
+        ]);
+      }),
+    ]);
+  });
+
+  $('repo-picker').replaceChildren(
+    ...(blocks.length ? blocks : [el('p', { class: 'hint', text: 'Nothing matches.' })]),
+  );
+  const shown = [...pickerTicks.values()].filter(Boolean).length;
+  $('picker-count').textContent = `${shown} shown · ${pickerTicks.size - shown} hidden`;
   $('roots').value = state.roots.map((r) => r.configured).join('\n');
+}
+
+async function commitPicker() {
+  await withBusy('Saving selection…', () =>
+    putJson('/api/config', {
+      roots: state.roots.map((r) => r.configured),
+      hidden: [...pickerTicks.entries()].filter(([, on]) => !on).map(([path]) => path),
+    }),
+  );
+  await refresh();
 }
 
 /* ------------------------------------------------------------------- server */
@@ -298,22 +459,23 @@ $('save-roots').addEventListener('click', async () => {
 });
 
 const currentHidden = () =>
-  [...$('repo-picker').querySelectorAll('input:not(:checked)')].map((i) => i.dataset.path);
-
-$('repo-picker').addEventListener('change', async () => {
-  await withBusy('Saving selection…', () =>
-    putJson('/api/config', {
-      roots: state.roots.map((r) => r.configured),
-      hidden: currentHidden(),
-    }),
-  );
-  await refresh();
-});
+  [...pickerTicks.entries()].filter(([, on]) => !on).map(([path]) => path);
 
 const setAll = (checked) => {
-  for (const box of $('repo-picker').querySelectorAll('input')) box.checked = checked;
-  $('repo-picker').dispatchEvent(new Event('change'));
+  for (const path of pickerTicks.keys()) pickerTicks.set(path, checked);
+  commitPicker();
 };
+
+$('picker-filter').addEventListener('input', (e) => {
+  state.pickerQuery = e.target.value;
+  renderPicker();
+});
+
+$('search-help-toggle').addEventListener('click', (e) => {
+  const panel = $('search-help');
+  panel.hidden = !panel.hidden;
+  e.currentTarget.setAttribute('aria-expanded', String(!panel.hidden));
+});
 
 $('select-all').addEventListener('click', () => setAll(true));
 $('select-none').addEventListener('click', () => setAll(false));
