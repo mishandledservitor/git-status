@@ -16,10 +16,10 @@ import {
 } from '../public/format.js';
 
 describe('shortPath', () => {
-  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const roots = [{ configured: '~/git', resolved: '/Users/you/git' }];
 
   it('rewrites a path under a root back to how the root was configured', () => {
-    expect(shortPath('/Users/simon/git/mishandled/thing', roots)).toBe('~/git/mishandled/thing');
+    expect(shortPath('/Users/you/git/mishandled/thing', roots)).toBe('~/git/mishandled/thing');
   });
 
   it('returns the path unchanged when no root matches', () => {
@@ -27,19 +27,19 @@ describe('shortPath', () => {
   });
 
   it('does not match a root that is only a string prefix of the path', () => {
-    expect(shortPath('/Users/simon/gitlab/thing', roots)).toBe('/Users/simon/gitlab/thing');
+    expect(shortPath('/Users/you/gitlab/thing', roots)).toBe('/Users/you/gitlab/thing');
   });
 
   it('handles the repo being the root itself', () => {
-    expect(shortPath('/Users/simon/git', roots)).toBe('~/git');
+    expect(shortPath('/Users/you/git', roots)).toBe('~/git');
   });
 
   it('prefers the longest matching root when roots are nested', () => {
     const nested = [
-      { configured: '~/git', resolved: '/Users/simon/git' },
-      { configured: '~/git/work', resolved: '/Users/simon/git/work' },
+      { configured: '~/git', resolved: '/Users/you/git' },
+      { configured: '~/git/work', resolved: '/Users/you/git/work' },
     ];
-    expect(shortPath('/Users/simon/git/work/thing', nested)).toBe('~/git/work/thing');
+    expect(shortPath('/Users/you/git/work/thing', nested)).toBe('~/git/work/thing');
   });
 
   it('tolerates an empty roots list', () => {
@@ -259,10 +259,10 @@ describe('sortRepos', () => {
 });
 
 describe('claudePrompt', () => {
-  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const roots = [{ configured: '~/git', resolved: '/Users/you/git' }];
   const full = repo({
     name: 'shortlisted',
-    path: '/Users/simon/git/mishandled/shortlisted',
+    path: '/Users/you/git/mishandled/shortlisted',
     branch: 'mm4',
     upstream: { name: 'origin/mm4', ahead: 2, behind: 0 },
     defaultBranch: { ref: 'origin/main', ahead: 2, behind: 1 },
@@ -284,7 +284,7 @@ describe('claudePrompt', () => {
   });
 
   it('includes the absolute path so Claude can cd into the repo', () => {
-    expect(claudePrompt(full, roots, 2)).toContain('/Users/simon/git/mishandled/shortlisted');
+    expect(claudePrompt(full, roots, 2)).toContain('/Users/you/git/mishandled/shortlisted');
   });
 
   it('reports the checked-out branch and both divergences', () => {
@@ -398,19 +398,19 @@ describe('filterRepos', () => {
 
 
 describe('repoFolder', () => {
-  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const roots = [{ configured: '~/git', resolved: '/Users/you/git' }];
 
   it('is the first path segment below the matching root', () => {
-    expect(repoFolder('/Users/simon/git/mishandled/thing', roots)).toBe('mishandled');
-    expect(repoFolder('/Users/simon/git/x-others/spec-kit', roots)).toBe('x-others');
+    expect(repoFolder('/Users/you/git/mishandled/thing', roots)).toBe('mishandled');
+    expect(repoFolder('/Users/you/git/x-others/spec-kit', roots)).toBe('x-others');
   });
 
   it('is the root itself for a repo sitting directly under it', () => {
-    expect(repoFolder('/Users/simon/git/thing', roots)).toBe('~/git');
+    expect(repoFolder('/Users/you/git/thing', roots)).toBe('~/git');
   });
 
   it('keeps only the first segment for a deeper nesting', () => {
-    expect(repoFolder('/Users/simon/git/a/b/c', roots)).toBe('a');
+    expect(repoFolder('/Users/you/git/a/b/c', roots)).toBe('a');
   });
 
   it('falls back to the parent directory when no root matches', () => {
@@ -439,12 +439,12 @@ describe('parseQuery', () => {
 });
 
 describe('filterRepos with the query syntax', () => {
-  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const roots = [{ configured: '~/git', resolved: '/Users/you/git' }];
   const repos = [
-    repo({ name: 'alpha', path: '/Users/simon/git/mishandled/alpha', branch: 'main' }),
-    repo({ name: 'beta', path: '/Users/simon/git/mishandled/beta', branch: 'prod', dirty: { staged: 0, modified: 2, untracked: 0, conflicted: 0 } }),
-    repo({ name: 'gamma', path: '/Users/simon/git/work/gamma', branch: 'main', upstream: { name: 'origin/main', ahead: 2, behind: 0, gone: false } }),
-    repo({ name: 'delta', path: '/Users/simon/git/work/delta', branch: 'main', upstream: { name: 'origin/main', ahead: 0, behind: 3, gone: false } }),
+    repo({ name: 'alpha', path: '/Users/you/git/mishandled/alpha', branch: 'main' }),
+    repo({ name: 'beta', path: '/Users/you/git/mishandled/beta', branch: 'prod', dirty: { staged: 0, modified: 2, untracked: 0, conflicted: 0 } }),
+    repo({ name: 'gamma', path: '/Users/you/git/work/gamma', branch: 'main', upstream: { name: 'origin/main', ahead: 2, behind: 0, gone: false } }),
+    repo({ name: 'delta', path: '/Users/you/git/work/delta', branch: 'main', upstream: { name: 'origin/main', ahead: 0, behind: 3, gone: false } }),
   ];
   const names = (q: string) => filterRepos(repos, q, roots).map((r: any) => r.name);
 
@@ -493,12 +493,12 @@ describe('toggleToken', () => {
 });
 
 describe('groupRepos', () => {
-  const roots = [{ configured: '~/git', resolved: '/Users/simon/git' }];
+  const roots = [{ configured: '~/git', resolved: '/Users/you/git' }];
   const repos = [
-    repo({ name: 'zeta', path: '/Users/simon/git/work/zeta' }),
-    repo({ name: 'alpha', path: '/Users/simon/git/mishandled/alpha' }),
-    repo({ name: 'beta', path: '/Users/simon/git/mishandled/beta', dirty: { staged: 0, modified: 1, untracked: 0, conflicted: 0 } }),
-    repo({ name: 'solo', path: '/Users/simon/git/solo' }),
+    repo({ name: 'zeta', path: '/Users/you/git/work/zeta' }),
+    repo({ name: 'alpha', path: '/Users/you/git/mishandled/alpha' }),
+    repo({ name: 'beta', path: '/Users/you/git/mishandled/beta', dirty: { staged: 0, modified: 1, untracked: 0, conflicted: 0 } }),
+    repo({ name: 'solo', path: '/Users/you/git/solo' }),
   ];
 
   it('groups by folder, folders sorted by name with the root itself last, repos sorted by attention then name', () => {

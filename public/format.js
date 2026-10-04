@@ -98,7 +98,7 @@ export function sortRepos(repos) {
   return [...repos].sort((a, b) => attentionScore(b) - attentionScore(a) || byName(a, b));
 }
 
-/** `/Users/simon/git/a/b` under root `~/git` reads better as `~/git/a/b`. */
+/** `/Users/you/git/a/b` under root `~/git` reads better as `~/git/a/b`. */
 export function shortPath(path, roots) {
   const match = roots
     .filter((r) => path === r.resolved || path.startsWith(r.resolved + '/'))
