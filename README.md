@@ -92,3 +92,7 @@ npm run icon      # redraw Git Status.app's icon
 
 Built test-first. The layout separates pure logic from I/O so most of it is testable without a
 subprocess: `src/parse.ts` (git output parsers) and `public/format.js` (display helpers, shared by the browser and the tests) are pure; `src/git.ts`, `src/discover.ts` and `src/server.ts` do the I/O and are covered by integration tests against real temporary git repositories.
+
+## Licence
+
+MIT. See [`LICENSE`](LICENSE).
