@@ -1,0 +1,49 @@
+# OS files
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+Icon?
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+.envrc
+.netrc
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+credentials/
+credentials.json
+
+# Logs
+*.log
+logs/
+
+# Node and build output
+node_modules/
+dist/
+*.tsbuildinfo
+npm-debug.log*
+coverage/
+
+# Claude Code local state and personal skills
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
+.claude/skills/
+
+# Personal notes and handoffs
+HANDOFF.md
+notes/
+.scratch/
