@@ -138,6 +138,15 @@ describe('GET/PUT /api/config', () => {
     await put('/api/config', { roots: [scan], hidden: [] });
   });
 
+  it('persists hideClean and reports it with the repos', async () => {
+    const scan = (await api('/api/config')).body.roots[0];
+    expect((await api('/api/repos')).body.hideClean).toBe(false);
+    await put('/api/config', { roots: [scan], hidden: [], hideClean: true });
+    expect((await api('/api/config')).body.hideClean).toBe(true);
+    expect((await api('/api/repos')).body.hideClean).toBe(true);
+    await put('/api/config', { roots: [scan], hidden: [], hideClean: false });
+  });
+
   it('rejects a malformed body with 400 and leaves config untouched', async () => {
     const before = (await api('/api/config')).body;
     const res = await api('/api/config', {

@@ -92,6 +92,9 @@ export function attentionScore(repo) {
   );
 }
 
+/** Drop repos with nothing to act on; the same test as `is:clean`, so errors always stay. */
+export const withoutClean = (repos) => repos.filter((r) => attentionScore(r) > 0);
+
 const byName = (a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
 
 export function sortRepos(repos) {

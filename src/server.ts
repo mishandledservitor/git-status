@@ -154,6 +154,7 @@ export function createApp(options: AppOptions = {}): Server {
           roots: config.roots.map((r) => ({ configured: r, resolved: expandHome(r) })),
           repos: await mapLimit(visible, STATUS_CONCURRENCY, (r) => readRepoStatus(r.path)),
           hidden: discovered.filter((r) => hiddenSet.has(r.path)),
+          hideClean: config.hideClean,
           scannedAt: Date.now(),
         };
       },

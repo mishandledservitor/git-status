@@ -7,9 +7,11 @@ export interface Config {
   roots: string[];
   /** Absolute paths of repos the user has unticked. Anything new shows by default. */
   hidden: string[];
+  /** Leave out repos with nothing needing attention (the same test as `is:clean`). */
+  hideClean: boolean;
 }
 
-export const DEFAULT_CONFIG: Config = Object.freeze({ roots: ['~/git'], hidden: [] }) as Config;
+export const DEFAULT_CONFIG: Config = Object.freeze({ roots: ['~/git'], hidden: [], hideClean: false }) as Config;
 
 export function defaultConfigPath(): string {
   return join(
@@ -28,6 +30,7 @@ export function normalizeConfig(raw: unknown): Config {
   return {
     roots: roots?.length ? roots : [...DEFAULT_CONFIG.roots],
     hidden: strings(o.hidden) ?? [],
+    hideClean: o.hideClean === true,
   };
 }
 

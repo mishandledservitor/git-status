@@ -13,6 +13,7 @@ import {
   parseQuery,
   toggleToken,
   groupRepos,
+  withoutClean,
 } from '../public/format.js';
 
 describe('shortPath', () => {
@@ -511,5 +512,18 @@ describe('groupRepos', () => {
     const groups = groupRepos(repos, roots);
     expect(groups[0]!.attention).toBe(1);
     expect(groups[1]!.attention).toBe(0);
+  });
+});
+
+describe('withoutClean', () => {
+  it('drops repos with nothing needing attention and keeps the rest in order', () => {
+    const quiet = repo({ name: 'quiet' });
+    const dirty = repo({ name: 'dirty', dirty: { staged: 0, modified: 1, untracked: 0, conflicted: 0 } });
+    const behind = repo({ name: 'behind', upstream: { ahead: 0, behind: 2, gone: false } });
+    expect(withoutClean([quiet, dirty, quiet, behind]).map((r: { name: string }) => r.name)).toEqual(['dirty', 'behind']);
+  });
+
+  it('never hides a repo that failed to read', () => {
+    expect(withoutClean([repo({ error: 'boom' })])).toHaveLength(1);
   });
 });

@@ -11,6 +11,7 @@ import {
   shortPath,
   sortRepos,
   toggleToken,
+  withoutClean,
 } from './format.js';
 
 const $ = (id) => document.getElementById(id);
@@ -18,6 +19,7 @@ const $ = (id) => document.getElementById(id);
 const state = {
   repos: [],
   hidden: [],
+  hideClean: false,
   roots: [],
   scannedAt: null,
   query: '',
@@ -299,14 +301,17 @@ function section(group) {
 }
 
 function render() {
-  const visible = filterRepos(state.repos, state.query, state.roots);
+  const pool = state.hideClean ? withoutClean(state.repos) : state.repos;
+  const visible = filterRepos(pool, state.query, state.roots);
   const app = $('app');
   if (!visible.length) {
     app.replaceChildren(
       el('p', {
         class: 'empty',
-        text: state.repos.length
+        text: pool.length
           ? 'No repos match that filter.'
+          : state.repos.length
+            ? 'Every repo is clean. Turn off Hide clean repos under Settings to see them.'
           : 'No repos found. Check the folders to scan under Settings.',
       }),
     );
@@ -316,11 +321,13 @@ function render() {
     app.replaceChildren(el('div', { class: 'grid' }, sortRepos(visible).map(card)));
   }
   renderChips();
+  $('hide-clean').checked = state.hideClean;
 
   const needing = state.repos.filter((r) => attentionScore(r) > 0).length;
   const showing = visible.length === state.repos.length ? '' : `showing ${visible.length} of `;
+  const cleanHidden = state.hideClean ? state.repos.length - pool.length : 0;
   $('status-line').textContent = state.scannedAt
-    ? `${showing}${state.repos.length} repos · ${needing} need attention · ${state.hidden.length} hidden · scanned ${relativeTime(state.scannedAt)}`
+    ? `${showing}${state.repos.length} repos · ${needing} need attention · ${state.hidden.length} hidden${cleanHidden ? ` · ${cleanHidden} clean hidden` : ''} · scanned ${relativeTime(state.scannedAt)}`
     : '';
 }
 
@@ -392,6 +399,7 @@ async function commitPicker() {
     putJson('/api/config', {
       roots: state.roots.map((r) => r.configured),
       hidden: [...pickerTicks.entries()].filter(([, on]) => !on).map(([path]) => path),
+      hideClean: state.hideClean,
     }),
   );
   await refresh();
@@ -476,7 +484,7 @@ $('save-roots').addEventListener('click', async () => {
     .value.split('\n')
     .map((line) => line.trim())
     .filter(Boolean);
-  await withBusy('Saving…', () => putJson('/api/config', { roots, hidden: currentHidden() }));
+  await withBusy('Saving…', () => putJson('/api/config', { roots, hidden: currentHidden(), hideClean: state.hideClean }));
   await refresh();
 });
 
@@ -497,6 +505,18 @@ $('search-help-toggle').addEventListener('click', (e) => {
   const panel = $('search-help');
   panel.hidden = !panel.hidden;
   e.currentTarget.setAttribute('aria-expanded', String(!panel.hidden));
+});
+
+$('hide-clean').addEventListener('change', async (e) => {
+  state.hideClean = e.target.checked;
+  render();
+  await withBusy('Saving…', () =>
+    putJson('/api/config', {
+      roots: state.roots.map((r) => r.configured),
+      hidden: currentHidden(),
+      hideClean: state.hideClean,
+    }),
+  );
 });
 
 $('select-all').addEventListener('click', () => setAll(true));
