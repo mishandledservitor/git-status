@@ -22,15 +22,18 @@ export function expandHome(path: string): string {
  * Walk each root looking for repositories. A directory containing `.git`
  * (directory, or file for worktrees/submodules) is a repo, and we stop
  * descending there — a checkout inside a checkout is that repo's business.
+ * Ignored folders are never entered, so nothing under them is reported.
  */
-export async function discoverRepos(roots: string[]): Promise<RepoRef[]> {
+export async function discoverRepos(roots: string[], ignoredFolders: string[] = []): Promise<RepoRef[]> {
+  // resolve() drops a trailing slash, so `~/x/` and `~/x` ignore the same folder.
+  const ignored = new Set(ignoredFolders.map((f) => resolve(expandHome(f))));
   const found = new Map<string, RepoRef>();
   // Symlinks are resolved so a link back into the tree can't cause a loop, and
   // a link out of the tree can't smuggle in repos the user didn't ask for.
   const visited = new Set<string>();
 
   const walk = async (dir: string, base: string, depth: number): Promise<void> => {
-    if (depth > MAX_DEPTH) return;
+    if (depth > MAX_DEPTH || ignored.has(resolve(dir))) return;
 
     let entries;
     try {

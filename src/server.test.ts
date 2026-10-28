@@ -147,6 +147,17 @@ describe('GET/PUT /api/config', () => {
     await put('/api/config', { roots: [scan], hidden: [], hideClean: false });
   });
 
+  it('leaves out repos under an ignored folder', async () => {
+    const scan = (await api('/api/config')).body.roots[0];
+    await put('/api/config', { roots: [scan], hidden: [], ignoredFolders: [join(scan, 'nested')] });
+    const names = (await api('/api/repos')).body.repos.map((r: any) => r.name);
+    expect(names).toEqual(['one']);
+    expect((await api('/api/repos')).body.ignoredFolders).toEqual([join(scan, 'nested')]);
+    expect((await api('/api/config')).body.ignoredFolders).toEqual([join(scan, 'nested')]);
+    await put('/api/config', { roots: [scan], hidden: [] });
+    expect((await api('/api/repos')).body.repos).toHaveLength(2);
+  });
+
   it('rejects a malformed body with 400 and leaves config untouched', async () => {
     const before = (await api('/api/config')).body;
     const res = await api('/api/config', {

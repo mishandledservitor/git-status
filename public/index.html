@@ -49,6 +49,12 @@
         <button id="save-roots" class="primary">Save &amp; rescan</button>
       </div>
       <div class="settings-block">
+        <h2>Folders to ignore</h2>
+        <p class="hint">One path per line. Every repo under these folders is left out, including ones added later, such as a folder of worktrees. <code>~</code> is expanded.</p>
+        <textarea id="ignored" rows="3" spellcheck="false" placeholder="~/git/work/some-worktrees"></textarea>
+        <button id="save-ignored" class="primary">Save &amp; rescan</button>
+      </div>
+      <div class="settings-block">
         <h2>Clean repos</h2>
         <label class="check"><input id="hide-clean" type="checkbox" /> Hide clean repos</label>
         <p class="hint">Repos with nothing to act on stay off the page until something changes. Refresh brings them back the moment they need attention.</p>

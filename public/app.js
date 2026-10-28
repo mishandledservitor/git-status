@@ -20,6 +20,7 @@ const state = {
   repos: [],
   hidden: [],
   hideClean: false,
+  ignoredFolders: [],
   roots: [],
   scannedAt: null,
   query: '',
@@ -392,16 +393,27 @@ function renderPicker() {
   const shown = [...pickerTicks.values()].filter(Boolean).length;
   $('picker-count').textContent = `${shown} shown · ${pickerTicks.size - shown} hidden`;
   $('roots').value = state.roots.map((r) => r.configured).join('\n');
+  $('ignored').value = state.ignoredFolders.join('\n');
 }
 
+/** One place builds the saved config, so no setting is dropped when another one changes. */
+const saveSettings = (overrides = {}) =>
+  putJson('/api/config', {
+    roots: state.roots.map((r) => r.configured),
+    hidden: currentHidden(),
+    hideClean: state.hideClean,
+    ignoredFolders: state.ignoredFolders,
+    ...overrides,
+  });
+
+const lines = (text) =>
+  text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
 async function commitPicker() {
-  await withBusy('Saving selection…', () =>
-    putJson('/api/config', {
-      roots: state.roots.map((r) => r.configured),
-      hidden: [...pickerTicks.entries()].filter(([, on]) => !on).map(([path]) => path),
-      hideClean: state.hideClean,
-    }),
-  );
+  await withBusy('Saving selection…', () => saveSettings());
   await refresh();
 }
 
@@ -480,11 +492,12 @@ $('settings-toggle').addEventListener('click', (e) => {
 });
 
 $('save-roots').addEventListener('click', async () => {
-  const roots = $('roots')
-    .value.split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean);
-  await withBusy('Saving…', () => putJson('/api/config', { roots, hidden: currentHidden(), hideClean: state.hideClean }));
+  await withBusy('Saving…', () => saveSettings({ roots: lines($('roots').value) }));
+  await refresh();
+});
+
+$('save-ignored').addEventListener('click', async () => {
+  await withBusy('Saving…', () => saveSettings({ ignoredFolders: lines($('ignored').value) }));
   await refresh();
 });
 
@@ -510,13 +523,7 @@ $('search-help-toggle').addEventListener('click', (e) => {
 $('hide-clean').addEventListener('change', async (e) => {
   state.hideClean = e.target.checked;
   render();
-  await withBusy('Saving…', () =>
-    putJson('/api/config', {
-      roots: state.roots.map((r) => r.configured),
-      hidden: currentHidden(),
-      hideClean: state.hideClean,
-    }),
-  );
+  await withBusy('Saving…', () => saveSettings());
 });
 
 $('select-all').addEventListener('click', () => setAll(true));

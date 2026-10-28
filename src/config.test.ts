@@ -27,13 +27,26 @@ describe('loadConfig', () => {
   });
 
   it('reads back what was saved', async () => {
-    await saveConfig(file, { roots: ['~/work'], hidden: ['/a/b'], hideClean: true });
-    expect(await loadConfig(file)).toEqual({ roots: ['~/work'], hidden: ['/a/b'], hideClean: true });
+    await saveConfig(file, { roots: ['~/work'], hidden: ['/a/b'], hideClean: true, ignoredFolders: ['~/git/work-trees'] });
+    expect(await loadConfig(file)).toEqual({ roots: ['~/work'], hidden: ['/a/b'], hideClean: true, ignoredFolders: ['~/git/work-trees'] });
   });
 
   it('shows clean repos by default', async () => {
     expect(DEFAULT_CONFIG.hideClean).toBe(false);
     expect((await loadConfig(file)).hideClean).toBe(false);
+  });
+
+  it('ignores no folders by default', async () => {
+    expect(DEFAULT_CONFIG.ignoredFolders).toEqual([]);
+  });
+
+  it('keeps only string entries in ignoredFolders and trims blanks', async () => {
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      join(dir, 'ign.json'),
+      JSON.stringify({ ignoredFolders: ['~/a', 7, '  ', ' ~/b ', null] }),
+    );
+    expect((await loadConfig(join(dir, 'ign.json'))).ignoredFolders).toEqual(['~/a', '~/b']);
   });
 
   it('treats a non-boolean hideClean as off', async () => {
@@ -60,29 +73,29 @@ describe('loadConfig', () => {
       join(dir, 'mixed.json'),
       JSON.stringify({ roots: ['~/git', 42, null], hidden: ['/a', {}] }),
     );
-    expect(await loadConfig(join(dir, 'mixed.json'))).toEqual({ roots: ['~/git'], hidden: ['/a'], hideClean: false });
+    expect(await loadConfig(join(dir, 'mixed.json'))).toEqual({ roots: ['~/git'], hidden: ['/a'], hideClean: false, ignoredFolders: [] });
   });
 
   it('falls back to the default root when roots would end up empty', async () => {
-    await saveConfig(file, { roots: [], hidden: [], hideClean: false });
+    await saveConfig(file, { roots: [], hidden: [], hideClean: false, ignoredFolders: [] });
     expect((await loadConfig(file)).roots).toEqual(DEFAULT_CONFIG.roots);
   });
 });
 
 describe('saveConfig', () => {
   it('creates the containing directory if it is missing', async () => {
-    await saveConfig(file, { roots: ['~/git'], hidden: [], hideClean: false });
-    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ roots: ['~/git'], hidden: [], hideClean: false });
+    await saveConfig(file, { roots: ['~/git'], hidden: [], hideClean: false, ignoredFolders: [] });
+    expect(JSON.parse(await readFile(file, 'utf8'))).toEqual({ roots: ['~/git'], hidden: [], hideClean: false, ignoredFolders: [] });
   });
 
   it('writes formatted JSON a human can edit by hand', async () => {
-    await saveConfig(file, { roots: ['~/git'], hidden: [], hideClean: false });
+    await saveConfig(file, { roots: ['~/git'], hidden: [], hideClean: false, ignoredFolders: [] });
     expect(await readFile(file, 'utf8')).toContain('\n  "roots"');
   });
 
   it('overwrites rather than appending on repeated saves', async () => {
-    await saveConfig(file, { roots: ['~/a'], hidden: [], hideClean: false });
-    await saveConfig(file, { roots: ['~/b'], hidden: [], hideClean: false });
+    await saveConfig(file, { roots: ['~/a'], hidden: [], hideClean: false, ignoredFolders: [] });
+    await saveConfig(file, { roots: ['~/b'], hidden: [], hideClean: false, ignoredFolders: [] });
     expect((await loadConfig(file)).roots).toEqual(['~/b']);
   });
 });

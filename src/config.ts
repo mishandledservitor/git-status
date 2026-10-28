@@ -9,9 +9,11 @@ export interface Config {
   hidden: string[];
   /** Leave out repos with nothing needing attention (the same test as `is:clean`). */
   hideClean: boolean;
+  /** Folders never scanned: every repo under one is left out, including ones cloned later. */
+  ignoredFolders: string[];
 }
 
-export const DEFAULT_CONFIG: Config = Object.freeze({ roots: ['~/git'], hidden: [], hideClean: false }) as Config;
+export const DEFAULT_CONFIG: Config = Object.freeze({ roots: ['~/git'], hidden: [], hideClean: false, ignoredFolders: [] }) as Config;
 
 export function defaultConfigPath(): string {
   return join(
@@ -31,6 +33,7 @@ export function normalizeConfig(raw: unknown): Config {
     roots: roots?.length ? roots : [...DEFAULT_CONFIG.roots],
     hidden: strings(o.hidden) ?? [],
     hideClean: o.hideClean === true,
+    ignoredFolders: (strings(o.ignoredFolders) ?? []).map((f) => f.trim()).filter(Boolean),
   };
 }
 

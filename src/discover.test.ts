@@ -107,3 +107,41 @@ describe('discoverRepos', () => {
     }
   });
 });
+
+describe('discoverRepos ignoredFolders', () => {
+  let tree: string;
+
+  beforeAll(async () => {
+    tree = await mkdtemp(join(tmpdir(), 'gsg-ignore-'));
+    for (const rel of ['keep', 'trees/one', 'trees/nested/two', 'trees-extra/three']) {
+      await mkdir(join(tree, rel, '.git'), { recursive: true });
+    }
+  });
+
+  afterAll(async () => {
+    await rm(tree, { recursive: true, force: true });
+  });
+
+  const names = async (ignored: string[]) =>
+    (await discoverRepos([tree], ignored)).map((r) => r.name);
+
+  it('finds everything when nothing is ignored', async () => {
+    expect(await names([])).toEqual(['keep', 'one', 'three', 'two']);
+  });
+
+  it('skips every repo under an ignored folder, however deep', async () => {
+    expect(await names([join(tree, 'trees')])).toEqual(['keep', 'three']);
+  });
+
+  it('does not ignore a sibling whose name merely starts with the ignored folder', async () => {
+    expect(await names([join(tree, 'trees')])).toContain('three');
+  });
+
+  it('tolerates a trailing slash on the ignored path', async () => {
+    expect(await names([join(tree, 'trees') + '/'])).toEqual(['keep', 'three']);
+  });
+
+  it('ignores a folder nested deeper than the root', async () => {
+    expect(await names([join(tree, 'trees/nested')])).toEqual(['keep', 'one', 'three']);
+  });
+});

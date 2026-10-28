@@ -65,8 +65,9 @@ pkill -f "tsx src/main.ts"   # stop a server the launcher started
 
 Last updated: 2026-10-28
 - Release 1.0.0, the first public release. What it does for a user is in `CHANGELOG.md`.
-- It works end to end against a folder of about fifty repos, and a refresh takes well under a second. 169 tests pass and the typecheck is clean.
+- It works end to end against a folder of about fifty repos, and a refresh takes well under a second. 177 tests pass and the typecheck is clean.
 - Each card has an **Open in Devin** button (`POST /api/open`, macOS `open -a Devin`, only for repos the scan found).
+- Settings has a **Folders to ignore** box (`ignoredFolders` in the config, applied in `discoverRepos` so nothing under them is walked or fetched).
 - Settings has a **Hide clean repos** checkbox (`hideClean` in the config, `withoutClean` in `public/format.js`, same test as `is:clean`).
 - Cards group by subfolder, and the filter box has a small token syntax (`folder:`, `branch:`, `is:`, `-word`) driven by clickable chips.
 - If this section contradicts what you see in the repo, trust the repo and flag the mismatch.

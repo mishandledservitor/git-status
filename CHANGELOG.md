@@ -6,6 +6,7 @@ What changes in git-status from one release to the next, for people who use it. 
 
 ### Added
 
+- **Folders to ignore** in Settings leaves out every repository under the folders you list, including ones that appear there later, so a folder of throwaway worktrees never clutters the page.
 - **Hide clean repos** in Settings leaves out every repository with nothing to act on, so the page shows only what needs you. The choice is saved with your other settings, and the status line says how many clean repos are hidden.
 - **Open in Devin** on each card opens that repository's folder in Devin.
 

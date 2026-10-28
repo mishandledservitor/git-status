@@ -129,7 +129,7 @@ export function createApp(options: AppOptions = {}): Server {
 
   const scan = async () => {
     const config = await loadConfig(configPath);
-    const discovered = await discoverRepos(config.roots);
+    const discovered = await discoverRepos(config.roots, config.ignoredFolders);
     const hiddenSet = new Set(config.hidden);
     return { config, discovered, hiddenSet };
   };
@@ -155,6 +155,7 @@ export function createApp(options: AppOptions = {}): Server {
           repos: await mapLimit(visible, STATUS_CONCURRENCY, (r) => readRepoStatus(r.path)),
           hidden: discovered.filter((r) => hiddenSet.has(r.path)),
           hideClean: config.hideClean,
+          ignoredFolders: config.ignoredFolders,
           scannedAt: Date.now(),
         };
       },
