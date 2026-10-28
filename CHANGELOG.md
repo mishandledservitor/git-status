@@ -4,6 +4,10 @@ What changes in git-status from one release to the next, for people who use it. 
 
 ## [Unreleased]
 
+### Added
+
+- **Open in Devin** on each card opens that repository's folder in Devin.
+
 ## [1.0.0] - 2026-10-14
 
 This is the first public release. git-status is a local web dashboard that shows the git status of every repository under the folders you choose, on one page served from your own computer.

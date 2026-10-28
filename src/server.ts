@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join, resolve, sep } from 'node:path';
@@ -106,12 +107,25 @@ async function serveStatic(pathname: string, res: ServerResponse): Promise<void>
   res.end(body);
 }
 
+/** Opens a folder in Devin with macOS `open`; the path is an argument, never shell text. */
+export function openInDevinApp(path: string): Promise<void> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    execFile('open', ['-a', 'Devin', path], { timeout: 10_000 }, (error, _stdout, stderr) => {
+      if (error) rejectPromise(new Error(stderr.trim() || 'Could not open Devin'));
+      else resolvePromise();
+    });
+  });
+}
+
 export interface AppOptions {
   configPath?: string;
+  /** Replaces the Devin launcher, so tests never start a real app. */
+  openInDevin?: (path: string) => Promise<void>;
 }
 
 export function createApp(options: AppOptions = {}): Server {
   const configPath = options.configPath ?? defaultConfigPath();
+  const openInDevin = options.openInDevin ?? openInDevinApp;
 
   const scan = async () => {
     const config = await loadConfig(configPath);
@@ -166,6 +180,20 @@ export function createApp(options: AppOptions = {}): Server {
 
         return { results: await mapLimit(targets, FETCH_CONCURRENCY, (p) => fetchRepo(p)) };
       },
+    },
+  };
+
+  handlers['/api/open'] = {
+    POST: async (req) => {
+      const body = (await readJson(req)) as { path?: unknown };
+      if (typeof body.path !== 'string') throw new HttpError(400, '"path" must be a string');
+      // Only ever open a directory this scan actually found.
+      const { discovered } = await scan();
+      if (!discovered.some((r) => r.path === body.path)) {
+        throw new HttpError(400, `Not a known repository: ${body.path}`);
+      }
+      await openInDevin(body.path);
+      return { ok: true };
     },
   };
 

@@ -10,3 +10,4 @@ Decisions about how this repository is run, with the reason for each where it is
 | 4 | The first public release is version 1.0.0, and versions follow Semantic Versioning from here. | The owner, 2026-10-14 |
 | 5 | Examples in tests, help text and documentation use neutral folder and repository names such as `work`, `personal` and `my-app`. | The owner, 2026-10-14 |
 | 6 | The project is released under the MIT licence. | The owner, 2026-10-14 |
+| 7 | Each card has an **Open in Devin** button. It only launches the editor on a discovered repo folder and touches no repository state, so it is not a write action under the read-only rule and needs no confirmation. | The owner, 2026-10-28 |

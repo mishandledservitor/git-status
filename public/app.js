@@ -84,6 +84,28 @@ function copyButton(repo) {
   return button;
 }
 
+/** Open this repo's folder in Devin. */
+function devinButton(repo) {
+  const button = el('button', {
+    class: 'copy',
+    title: 'Open this repository in Devin',
+    text: 'Open in Devin',
+  });
+  button.addEventListener('click', async () => {
+    try {
+      await api('/api/open', { method: 'POST', body: JSON.stringify({ path: repo.path }) });
+      flash(button, 'Opened ✓');
+    } catch {
+      flash(button, 'Failed');
+    }
+  });
+  return button;
+}
+
+function actions(repo) {
+  return el('div', { class: 'card-actions' }, [devinButton(repo), copyButton(repo)]);
+}
+
 function flash(button, message) {
   const original = button.textContent;
   button.textContent = message;
@@ -165,7 +187,7 @@ function card(repo) {
         }),
       ]),
       el('div', { class: 'tone-alert', text: repo.error }),
-      el('div', { class: 'card-foot' }, [el('span', {}), copyButton(repo)]),
+      el('div', { class: 'card-foot' }, [el('span', {}), actions(repo)]),
     ]);
   }
 
@@ -192,7 +214,7 @@ function card(repo) {
       ...row('fetched', { text: relativeTime(repo.lastFetch), tone: 'none' }),
     ]),
     badges(repo),
-    el('div', { class: 'card-foot' }, [branchList(repo), copyButton(repo)]),
+    el('div', { class: 'card-foot' }, [branchList(repo), actions(repo)]),
   ]);
 }
 

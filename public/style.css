@@ -541,6 +541,12 @@ button.primary {
   min-width: 0;
 }
 
+.card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 0.35rem;
+}
+
 button.copy {
   flex: 0 0 auto;
   padding: 0.15rem 0.5rem;

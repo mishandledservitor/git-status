@@ -10,6 +10,7 @@ let dir: string;
 let configPath: string;
 let server: Server;
 let base: string;
+const opened: string[] = [];
 
 const api = async (path: string, init?: RequestInit) => {
   const res = await fetch(base + path, init);
@@ -47,7 +48,12 @@ beforeAll(async () => {
   const two = await makeRepo(scan, 'nested/two', {});
   await write(two, 'scratch.txt', 'dirty');
 
-  server = createApp({ configPath });
+  server = createApp({
+    configPath,
+    openInDevin: async (path) => {
+      opened.push(path);
+    },
+  });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const addr = server.address();
   if (typeof addr === 'string' || addr === null) throw new Error('no address');
@@ -241,6 +247,50 @@ describe('POST /api/fetch', () => {
     const scan = (await api('/api/config')).body.roots[0];
     const { status } = await post('/api/fetch', { paths: [join(scan, 'not-a-repo')] });
     expect(status).toBe(400);
+  });
+});
+
+describe('POST /api/open', () => {
+  it('opens a discovered repo in Devin', async () => {
+    const scan = (await api('/api/config')).body.roots[0];
+    const repo = join(scan, 'one');
+    const { status, body } = await post('/api/open', { path: repo });
+
+    expect(status).toBe(200);
+    expect(body).toEqual({ ok: true });
+    expect(opened).toEqual([repo]);
+  });
+
+  it('refuses a path the scan did not find', async () => {
+    opened.length = 0;
+    const { status } = await post('/api/open', { path: '/etc' });
+    expect(status).toBe(400);
+    expect(opened).toEqual([]);
+  });
+
+  it('refuses a missing or non-string path', async () => {
+    expect((await post('/api/open', {})).status).toBe(400);
+    expect((await post('/api/open', { path: 5 })).status).toBe(400);
+  });
+
+  it('reports a launcher failure instead of claiming success', async () => {
+    const failing = createApp({
+      configPath,
+      openInDevin: async () => {
+        throw new Error('Devin is not installed');
+      },
+    });
+    await new Promise<void>((resolve) => failing.listen(0, '127.0.0.1', resolve));
+    const addr = failing.address() as AddressInfo;
+    const scan = (await api('/api/config')).body.roots[0];
+    const res = await fetch(`http://127.0.0.1:${addr.port}/api/open`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ path: join(scan, 'one') }),
+    });
+    await new Promise<void>((resolve) => failing.close(() => resolve()));
+    expect(res.status).toBe(500);
+    expect((await res.json()).error).toContain('Devin is not installed');
   });
 });
 
